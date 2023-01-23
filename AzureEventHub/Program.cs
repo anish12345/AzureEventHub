@@ -21,9 +21,11 @@ List<Device> deviceList = new List<Device>()
     new Device() { deviceId = "D45",temperature=35.4f},
 };
 
-await SendData(deviceList);
+//await SendData(deviceList);
 //await ReadEvents();
-await ReadEventsFromPartition();
+//await ReadEventsFromPartition();
+
+await SendDataSpecificPartition(deviceList);
 
 async Task SendData(List<Device> deviceList)
 {
@@ -82,4 +84,22 @@ async Task ReadEventsFromPartition()
         Console.WriteLine($"Partition Key {_event.Data.PartitionKey}");
         Console.WriteLine(Encoding.UTF8.GetString(_event.Data.EventBody));
     }
+}
+
+
+async Task SendDataSpecificPartition(List<Device> deviceList)
+{
+    EventHubProducerClient eventHubProducerClient = new EventHubProducerClient(connectionString, eventHubName);
+    List<EventData> eventData = new List<EventData>();
+
+    foreach (Device device in deviceList)
+    {
+        eventData.Add(new EventData(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(device))));
+    }
+
+    await eventHubProducerClient.SendAsync(eventData, new SendEventOptions() { PartitionKey = "D1" },
+        new System.Threading.CancellationToken());
+
+    Console.WriteLine("Events sent");
+    await eventHubProducerClient.DisposeAsync();
 }
